@@ -88,7 +88,7 @@ export default function PortfolioTracker() {
                     <div className="flex flex-col items-center">
                       <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
                       <p className="mt-4 text-lg sm:text-xl md:text-2xl text-cyan-400 animate-pulse">
-                        Carregando seu portfólio...
+                        Loading...
                       </p>
                     </div>
                   </div>
@@ -98,9 +98,9 @@ export default function PortfolioTracker() {
                   <div className="bg-black/80 p-4 sm:p-6 rounded-xl border border-cyan-500/30 shadow-lg shadow-cyan-500/20">
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400">Total Value (Supra)</h3>
                     <p className="mt-2 text-2xl sm:text-3xl md:text-4xl text-white">
-                      {hasZiggly ? `$${getTotalValue()}` : "Bloqueado"}
+                      {hasZiggly ? `$${getTotalValue()}` : "Locked"}
                     </p>
-                    <span className="text-sm sm:text-base text-gray-400">Atualizado em tempo real</span>
+                    <span className="text-sm sm:text-base text-gray-400">Updated in real-time</span>
                   </div>
                   <div className="bg-black/80 p-4 sm:p-6 rounded-xl border border-pink-500/30 shadow-lg shadow-pink-500/20">
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-pink-400">Tokens on Supra</h3>
@@ -110,7 +110,7 @@ export default function PortfolioTracker() {
                   <div className="bg-black/80 p-4 sm:p-6 rounded-xl border border-purple-500/30 shadow-lg shadow-purple-500/20">
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-purple-400">Ziggly Holdings</h3>
                     <p className="mt-2 text-2xl sm:text-3xl md:text-4xl text-white">{getZigglyHoldings()} ZIG</p>
-                    <span className="text-sm sm:text-base text-gray-400">Atualizado em tempo real</span>
+                    <span className="text-sm sm:text-base text-gray-400">Updated in real-time</span>
                   </div>
                 </div>
 
@@ -120,14 +120,14 @@ export default function PortfolioTracker() {
                   </div>
                 ) : hasZiggly && balanceData && balanceData.tokens && balanceData.tokens.length > 0 ? (
                   <div className="mt-10 sm:mt-12 md:mt-16 bg-black/80 p-4 sm:p-6 rounded-xl border border-pink-500/30 shadow-lg shadow-pink-500/20">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-pink-400 mb-4 sm:mb-6">Seus Tokens Supra</h3>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-pink-400 mb-4 sm:mb-6">Your Supra Tokens</h3>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm sm:text-base">
                         <thead>
                           <tr className="border-b border-gray-700">
                             <th className="py-2 sm:py-3 text-gray-300">Token</th>
-                            <th className="py-2 sm:py-3 text-gray-300">Saldo</th>
-                            <th className="py-2 sm:py-3 text-gray-300">Valor (USD)</th>
+                            <th className="py-2 sm:py-3 text-gray-300">Balance</th>
+                            <th className="py-2 sm:py-3 text-gray-300">Value (USD)</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -145,13 +145,13 @@ export default function PortfolioTracker() {
                 ) : (
                   <div className="text-center mt-10">
                     {hasZiggly ? (
-                      <p className="text-xl sm:text-2xl md:text-3xl text-red-400">Nenhum saldo de tokens disponível.</p>
+                      <p className="text-xl sm:text-2xl md:text-3xl text-red-400">No token balances available.</p>
                     ) : (
                       <div>
-                        <p className="text-xl sm:text-2xl md:text-3xl text-purple-400 mb-4">Compre Ziggly para Desbloquear!</p>
+                        <p className="text-xl sm:text-2xl md:text-3xl text-purple-400 mb-4">Buy Ziggly to Unlock!</p>
                         <Link href="https://www.pumpit.pro/token/0x8bcb5e4c66a82dc794145d911c59cba5be86bfa2c38f3fd9d2d9fefb78e37495::PREZIGGLY::PREZIGGLY">
                           <button className="mt-6 sm:mt-8 md:mt-10 px-8 sm:px-10 md:px-12 lg:px-14 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl lg:text-2xl bg-pink-500 font-bold rounded-full shadow-lg shadow-pink-500/50 hover:bg-cyan-500 hover:shadow-cyan-500/50 transition-all duration-300">
-                            Compre Ziggly Agora!
+                            Buy Ziggly Now!
                           </button>
                         </Link>
                       </div>

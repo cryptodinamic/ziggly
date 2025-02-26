@@ -1,17 +1,17 @@
 // hooks/useTokenTransactions.ts
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useWallet } from "../contexts/WalletContext";
 import axios from "axios";
 
 export const useTokenTransactions = () => {
   const { accounts, supraProvider } = useWallet();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // Explicitly type the state
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  const buyZiggly = async (valueInSupra: number) => {
+  const buyZiggly = useCallback(async (maxAptos: number, minCoins: number) => {
     if (!accounts || accounts.length === 0 || !supraProvider) {
       setError("Carteira não conectada");
       console.log("Erro: Carteira não conectada", { accounts, supraProvider });
@@ -45,13 +45,16 @@ export const useTokenTransactions = () => {
         });
       } catch (rpcErr) {
         console.error("Erro ao acessar RPC:", rpcErr);
-        throw rpcErr;
+        throw new Error("Falha ao obter sequenceNumber do RPC");
       }
       console.log("Resposta do RPC:", response.data);
       const sequenceNumber = Number(response.data.result?.sequence_number || 0);
       console.log("SequenceNumber obtido:", sequenceNumber);
 
-      const supraAmount = Math.floor(valueInSupra * 1e8).toString();
+      // Convert amounts to the appropriate format (e.g., 1 SUPRA = 1e8 units)
+      const supraAmount = Math.floor(maxAptos * 1e8).toString(); // Max SUPRA to spend
+      const zigglyAmount = Math.floor(minCoins * 1e8).toString(); // Min ZIG to receive
+
       const payload: [string, number, string, string, string, string[], [Uint8Array, Uint8Array], { txExpiryTime: number }] = [
         senderAddress,
         sequenceNumber,
@@ -59,7 +62,7 @@ export const useTokenTransactions = () => {
         gasLimit,
         gasPrice,
         [tokenCoinType],
-        [new TextEncoder().encode(supraAmount), new Uint8Array()],
+        [new TextEncoder().encode(supraAmount), new TextEncoder().encode(zigglyAmount)], // Pass both amounts
         { txExpiryTime },
       ];
 
@@ -69,7 +72,7 @@ export const useTokenTransactions = () => {
         rawTxData = await supraProvider.createRawTransactionData(payload);
       } catch (internalErr) {
         console.error("Erro interno em createRawTransactionData:", internalErr);
-        throw internalErr;
+        throw new Error("Falha ao criar dados brutos da transação");
       }
       console.log("Dados da transação bruta:", rawTxData);
 
@@ -79,16 +82,16 @@ export const useTokenTransactions = () => {
 
       console.log("Enviando transação:", rawTxData.rawTransaction);
       await supraProvider.sendTransaction({ data: { rawTransaction: rawTxData.rawTransaction } });
-      setTxHash(rawTxData.rawTransaction);
+      setTxHash(rawTxData.rawTransaction); // Updated to use rawTxData.rawTransaction directly
       console.log("Transação concluída com hash:", rawTxData.rawTransaction);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error("Erro ao comprar Ziggly:", errorMessage);
-      setError(`Falha ao comprar Ziggly: ${errorMessage}`);
+      setError(`Falha ao comprar Ziggly: ${errorMessage}`); // setError is now in scope
     } finally {
       setLoading(false);
     }
-  };
+  }, [accounts, supraProvider]); // Add dependencies to useCallback
 
-  return { buyZiggly, loading, error, txHash };
+  return { buyZiggly, loading, error, txHash, setError }; // Expose setError in the return
 };

@@ -1,4 +1,3 @@
-//hooks/useWalletBalance.ts
 "use client";
 
 import { useEffect, useState } from "react";
@@ -24,7 +23,7 @@ export const useWalletBalance = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Inicializar o SupraClient no cliente
+  // Initialize SupraClient on the client side
   useEffect(() => {
     const initSupraClient = async () => {
       if (!supraClient) {
@@ -32,7 +31,6 @@ export const useWalletBalance = () => {
           supraClient = await SupraClient.init("https://rpc-mainnet.supra.com");
           console.log("SupraClient initialized successfully:", supraClient);
         } catch (err) {
-          // Tipamos como Error para acessar .message
           console.error("Failed to initialize SupraClient:", err instanceof Error ? err.message : String(err));
           setError("Failed to connect to Supra Chain");
         }
@@ -68,7 +66,7 @@ export const useWalletBalance = () => {
       const address = new HexString(account);
       const tokenBalances: TokenBalance[] = [];
 
-      // 1. Saldo nativo de SUPRA
+      // 1. Native SUPRA balance
       console.log("Fetching SUPRA balance...");
       try {
         const supraBalanceRaw = await supraClient.getAccountSupraCoinBalance(address);
@@ -86,11 +84,10 @@ export const useWalletBalance = () => {
           console.log("No SUPRA balance found for this address");
         }
       } catch (err) {
-        // Tipamos como Error ou verificamos o tipo
         console.log("No SUPRA resource found (likely zero balance):", err instanceof Error ? err.message : String(err));
       }
 
-      // 2. Consultar saldos dos tokens da lista externa
+      // 2. Fetch balances for tokens in the external token list
       console.log("Fetching balances for tokens in tokenList:", tokenList);
       for (const token of tokenList) {
         const { coinType, decimals } = token;
@@ -117,7 +114,6 @@ export const useWalletBalance = () => {
             console.log(`No balance found for ${coinType}`);
           }
         } catch (err) {
-          // Tipamos como Error ou verificamos o tipo
           console.log(`No resource found for ${coinType} (likely zero balance):`, err instanceof Error ? err.message : String(err));
         }
       }
@@ -126,7 +122,6 @@ export const useWalletBalance = () => {
       setBalanceData({ tokens: tokenBalances });
       console.log("Balance data set:", tokenBalances);
     } catch (err) {
-      // Tipamos como Error para acessar .message
       console.error("Unexpected error fetching wallet balances:", err instanceof Error ? err.message : String(err));
       setError("Failed to load token balances from Supra Chain");
       setBalanceData(null);
@@ -141,5 +136,6 @@ export const useWalletBalance = () => {
     }
   }, [accounts, supraProvider, supraClient]);
 
-  return { balanceData, loading, error, refetch: fetchBalance };
+  // Return supraClient along with other values
+  return { balanceData, loading, error, refetch: fetchBalance, supraClient };
 };
