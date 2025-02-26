@@ -54,7 +54,7 @@ export default function Nav() {
         <div className="flex items-center space-x-4">
           <WalletConnector />
           <Link
-            href="/comingsoon"
+            href="https://t.me/ziggly_cto"
             className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-full hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-sm md:text-base"
           >
             Join Community
