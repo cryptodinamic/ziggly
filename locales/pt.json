@@ -1,0 +1,23 @@
+{
+    "home": {
+      "title": "DOGE BLAST!",
+      "description": "A maior meme coin da galáxia, pronta para explodir de diversão e lucros!",
+      "button": "Junte-se à Festa Meme",
+      "features": {
+        "title": "Por que DOGE BLAST é épico?",
+        "card1": {
+          "title": "Diversão Infinita",
+          "description": "Ria, troque e cresça com nossa comunidade louca!"
+        },
+        "card2": {
+          "title": "Lucros Explosivos",
+          "description": "Suba com a hype e ganhe BIG com DOGE BLAST!"
+        },
+        "card3": {
+          "title": "Comunidade Insana",
+          "description": "Junte-se aos DOGEs mais loucos da web3!"
+        }
+      },
+      "footer": "© 2025 DOGE BLAST. Todos os direitos reservados. Woof!"
+    }
+  }

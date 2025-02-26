@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Animations */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulseNeon {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes orbit {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(50px, 50px) rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(30px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-gradientShift {
+  animation: gradientShift 15s ease infinite;
+  background-size: 200% 200%;
+}
+
+.animate-pulseNeon {
+  animation: pulseNeon 2s ease-in-out infinite;
+}
+
+.animate-orbit {
+  animation: orbit 10s linear infinite;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1.5s ease-in-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 1s ease-in-out;
+}
+
+/* Grid Pattern for Background */
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, #ffffff10 1px, transparent 1px),
+                    linear-gradient(to bottom, #ffffff10 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Existing animations like pulseNeon and glow-cyan should already be there */
+
+/* Slide-In Animation */
+@keyframes slideIn {
+  0% { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.5s ease-in-out;
+}
+
+/* Slide-Out Animation (Optional for Closing) */
+@keyframes slideOut {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+.floating-ziggly {
+  position: absolute;
+  top: 20%; /* Posição vertical ajustada para ficar atrás do título */
+  z-index: 5; /* Fica atrás do título (z-10) */
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Desktop (tela maior que 1024px, por exemplo) */
+@media (min-width: 1024px) {
+  .floating-ziggly {
+    left: 50%; /* Centralizado horizontalmente */
+    transform: translate(-50%, -50%); /* Deslocado 15% para a esquerda (50% + 15% = 65%) */
+    width: 250px; /* Tamanho aumentado */
+    height: 250px;
+  }
+}
+
+/* Mobile (tela menor que 1024px) */
+@media (max-width: 1023px) {
+  .floating-ziggly {
+    left: 50%; /* Centralizado horizontalmente */
+    transform: translate(-50%, -50%); /* Deslocado 8% para a esquerda (50% + 8% = 58%) */
+    width: 180px; /* Tamanho ajustado para mobile */
+    height: 180px;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(-46%, -50%) /* ou -58% para mobile */; }
+  50% { transform: translate(-48%, -52%) /* ou -58% para mobile */; }
+}

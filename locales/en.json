@@ -1,0 +1,30 @@
+{
+    "home": {
+      "hero": {
+        "tagline": "The meme token that",
+        "highlight": "unlocks free tools",
+        "button": "Buy Ziggly Now"
+      },
+      "tools": {
+        "title": "Unlock Ziggly Tools",
+        "card1": {
+          "title": "Token Charts",
+          "description": "Track any token’s price with real-time, ziggly-powered charts!"
+        },
+        "card2": {
+          "title": "Portfolio Tracker",
+          "description": "See your crypto stash in one place—free with Ziggly!"
+        },
+        "card3": {
+          "title": "Market Vibes",
+          "description": "Catch the hottest trends—Ziggly holders get the edge!"
+        }
+      },
+      "cta": {
+        "title": "Grab Ziggly Before It’s Gone!",
+        "description": "The wildest meme token with tools you’ll actually use. Don’t sleep on this!",
+        "button": "Get Ziggly Now!"
+      },
+      "footer": "Ziggly | From Meme to Mastery"
+    }
+  }
