@@ -131,9 +131,11 @@ export default function Nav() {
           <div className="p-4 border-t border-cyan-500/30 flex flex-col items-center space-y-4">
             <WalletConnector />
             <Link
-              href="/comingsoon"
+              href="https://t.me/ziggly_cto"
               className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white text-lg font-bold rounded-full hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-center"
               onClick={toggleMenu}
+              target="_blank" // Isso abre o link em uma nova aba
+              rel="noopener noreferrer" // Boa prática para segurança em links externos
             >
               Join Telegram
             </Link>
