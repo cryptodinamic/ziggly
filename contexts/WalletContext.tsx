@@ -13,6 +13,7 @@ interface SupraWalletProvider {
     payload: [string, number, string, string, string, string[], [Uint8Array, Uint8Array], { txExpiryTime: number }]
   ) => Promise<{ rawTransaction: string }>;
   sendTransaction: (params: { data: { rawTransaction: string } }) => Promise<void>;
+  sendTokenAmount: (tx: { toAddress: string; amount: number; token: string }) => Promise<string | undefined>;
   on(event: "accountChanged", callback: (data: string) => void): void;
   on(event: "networkChanged", callback: (data: string | { chainId: string }) => void): void;
   on(event: "disconnect", callback: () => void): void;

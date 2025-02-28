@@ -40,14 +40,17 @@ export default function Nav() {
           <Link href="/" className="text-gray-300 hover:text-cyan-400 hover:glow-cyan transition-all duration-300">
             Home
           </Link>
-          <Link href="/charts" className="text-gray-300 hover:text-cyan-400 hover:glow-cyan transition-all duration-300">
-            Charts
+          <Link href="/trade" className="text-gray-300 hover:text-cyan-400 hover:glow-cyan transition-all duration-300">
+            Dex
           </Link>
           <Link href="/portfolio-tracker" className="text-gray-300 hover:text-cyan-400 hover:glow-cyan transition-all duration-300">
             Portfolio
           </Link>
           <Link href="/vibes" className="text-gray-300 hover:text-cyan-400 hover:glow-cyan transition-all duration-300">
             Ziggly Scanner
+          </Link>
+          <Link href="/price-index" className="text-gray-300 hover:text-cyan-400 hover:glow-cyan transition-all duration-300">
+            Price Index
           </Link>
         </div>
 
@@ -106,11 +109,11 @@ export default function Nav() {
               Home
             </Link>
             <Link
-              href="/charts"
+              href="/trade"
               className="text-xl font-semibold text-gray-300 hover:text-cyan-400 hover:glow-cyan hover:scale-105 transition-all duration-300"
               onClick={toggleMenu}
             >
-              Charts
+              Dex
             </Link>
             <Link
               href="/portfolio-tracker"
@@ -125,6 +128,13 @@ export default function Nav() {
               onClick={toggleMenu}
             >
               Ziggly Scanner
+            </Link>
+            <Link
+              href="/price-index"
+              className="text-xl font-semibold text-gray-300 hover:text-cyan-400 hover:glow-cyan hover:scale-105 transition-all duration-300"
+              onClick={toggleMenu}
+            >
+              Price Index
             </Link>
           </div>
 

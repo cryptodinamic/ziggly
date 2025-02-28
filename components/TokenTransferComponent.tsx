@@ -1,276 +1,222 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useWallet } from "../contexts/WalletContext";
 import { useWalletBalance } from "../hooks/useWalletBalance";
-import { HexString, BCS } from "supra-l1-sdk";
+import { ethers } from "ethers";
 
-export const TokenTransferComponent: React.FC = () => {
+export default function TokenTransferComponent() {
   const { accounts, connectWallet, supraProvider, networkData } = useWallet();
-  const { balanceData, loading: balanceLoading, error: balanceError } = useWalletBalance();
-  const [receiverAddress, setReceiverAddress] = useState<string>("");
-  const [amount, setAmount] = useState<string>("");
+  const { balanceData, loading, error, refetch } = useWalletBalance();
+  const isConnected = accounts.length > 0;
+
+  const [recipientAddress, setRecipientAddress] = useState<string>("");
+  const [transferAmount, setTransferAmount] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  const isConnected = accounts.length > 0;
-  const senderAddress = isConnected ? accounts[0] : "";
-  const presetAmounts = [1, 10, 25, 50];
-
-  // Get SUPRA balance from balanceData
-  const supraBalance = balanceData?.tokens.find((token) => token.tokenName === "SUPRA")?.balance || 0;
-
-  const handlePresetAmount = (value: number) => {
-    setAmount(value.toString());
-  };
-
-  // Fetch sequence number via Supra REST API
-  const getSequenceNumber = async (address: string): Promise<number> => {
-    try {
-      const response = await fetch(`https://rpc-mainnet.supra.com/v1/accounts/${address}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`REST API Error: ${response.status} - ${response.statusText}`);
-      }
-
-      const text = await response.text();
-      console.log("Raw REST API Response for sequence:", text);
-
-      if (!text) {
-        throw new Error("Empty REST API Response");
-      }
-
-      const data = JSON.parse(text);
-      console.log("REST API Response for sequence:", data);
-
-      const sequenceNumber = Number(data.sequence_number);
-      if (isNaN(sequenceNumber)) {
-        throw new Error("Invalid sequence number in REST API response");
-      }
-      return sequenceNumber;
-    } catch (err) {
-      console.error("Error fetching sequenceNumber:", err);
-      setError("Failed to fetch sequence number. Using 0 as fallback.");
-      return 0; // Fallback only if absolutely necessary
+  const getSupraBalance = () => {
+    if (balanceData && balanceData.tokens) {
+      const supraToken = balanceData.tokens.find((token) => token.tokenName === "SUPRA");
+      return supraToken ? supraToken.balance : 0;
     }
+    return 0;
   };
 
-  const handleTransfer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isConnected) {
-      setError("Please connect your wallet first!");
+  const handleConnectWallet = async () => {
+    if (!connectWallet) {
+      console.error("connectWallet function is not available.");
+      alert("Wallet connection is not supported.");
       return;
     }
-    if (!supraProvider) {
-      setError("Supra provider not available.");
+    try {
+      await connectWallet();
+    } catch (err) {
+      console.error("Failed to connect wallet:", err);
+      alert("Failed to connect wallet.");
+    }
+  };
+
+  const handleTransfer = async () => {
+    if (!isConnected || !supraProvider) {
+      setTransferError("Please connect your wallet first!");
       return;
     }
     if (networkData?.chainId !== "8") {
-      setError("Please switch to Supra mainnet (chainId 8)!");
+      setTransferError("Please switch to Supra Mainnet (chainId 8)!");
+      return;
+    }
+    if (!recipientAddress || !recipientAddress.match(/^0x[a-fA-F0-9]{64}$/)) {
+      setTransferError("Please enter a valid Supra address (0x + 64 hex chars).");
+      return;
+    }
+    if (!transferAmount || parseFloat(transferAmount) <= 0) {
+      setTransferError("Please enter a valid amount of SUPRA.");
+      return;
+    }
+
+    const amount = parseFloat(transferAmount);
+    const supraBalance = getSupraBalance();
+    if (amount > supraBalance) {
+      setTransferError("Insufficient SUPRA balance.");
       return;
     }
 
     setIsLoading(true);
-    setError(null);
+    setTransferError(null);
     setTxHash(null);
 
     try {
-      if (!receiverAddress || !amount) {
-        throw new Error("Please fill in all fields");
-      }
+      const amountUnits = ethers.parseUnits(transferAmount, 8).toString();
+      const tx = {
+        data: "",
+        from: accounts[0],
+        to: recipientAddress,
+        value: amountUnits,
+        chainId: networkData.chainId,
+      };
+      console.log("Sending transaction:", tx);
+      const txResult = await supraProvider.sendTransaction(tx);
+      console.log("Transaction hash:", txResult);
 
-      const transferAmount = BigInt(Math.floor(parseFloat(amount) * 1e8)); // 10^8 scaling per docs
-      if (transferAmount > BigInt(Math.floor(supraBalance * 1e8))) {
-        throw new Error("Insufficient SUPRA balance");
-      }
-
-      const sequenceNumber = await getSequenceNumber(senderAddress);
-      console.log("Using sequenceNumber:", sequenceNumber);
-
-      const txExpiryTime = Math.ceil(Date.now() / 1000) + 30; // 30 seconds from now
-      const optionalTransactionPayloadArgs = { txExpiryTime };
-
-      // Payload based on Supra docs and Starkey demo
-      const rawTxPayload: [string, number, string, string, string, string[], [Uint8Array, Uint8Array], { txExpiryTime: number }] = [
-        senderAddress,
-        sequenceNumber,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-        "supra_account",
-        "transfer",
-        [],
-        [
-          new HexString(receiverAddress).toUint8Array(),
-          BCS.bcsSerializeUint64(Number(transferAmount)),
-        ],
-        optionalTransactionPayloadArgs,
-      ];
-
-      console.log("Payload sent:", rawTxPayload);
-
-      // Generate raw transaction
-      const rawTxResponse = (await supraProvider.createRawTransactionData(rawTxPayload)) as unknown as string;
-      console.log("Response from createRawTransactionData:", rawTxResponse);
-
-      if (!rawTxResponse) {
-        throw new Error("Failed to create raw transaction: no response from wallet");
-      }
-
-      // Send transaction via Starkey
-      const params = { data: { rawTransaction: rawTxResponse } };
-      const txResult = await supraProvider.sendTransaction(params); // Expect string based on docs
-      console.log("Transaction result:", txResult);
-
-      // Use txResult if valid hash, otherwise fallback
-      const finalTxHash = typeof txResult === "string" && txResult ? txResult : "0x" + Math.random().toString(16).slice(2);
-      setTxHash(finalTxHash);
-      setReceiverAddress("");
-      setAmount("");
-      console.log("Transfer completed successfully");
-
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Error during transfer";
-      setError(errorMessage);
+      setTxHash(txResult);
+      alert(`Transferred ${amount} SUPRA to ${recipientAddress.slice(0, 6)}...${recipientAddress.slice(-4)}!`);
+      refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to send transaction.";
+      setTransferError(errorMessage);
       console.error("Transfer error:", err);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleConnect = async () => {
-    try {
-      await connectWallet();
-    } catch (err) {
-      setError("Failed to connect wallet");
-      console.error(err);
+      setRecipientAddress("");
+      setTransferAmount("");
     }
   };
 
   return (
-    <div className="bg-black text-white p-6 sm:p-8 rounded-xl shadow-lg max-w-md mx-auto border border-cyan-500/30 relative">
-      <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-      <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-pink-500 mb-6 sm:mb-8 relative z-10">
-        Transfer Supra Tokens
-      </h2>
-
-      {!isConnected ? (
-        <button
-          onClick={handleConnect}
-          disabled={isLoading}
-          className="w-full px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-lg sm:text-xl disabled:bg-gray-500 disabled:shadow-none"
-        >
-          Connect Wallet
-        </button>
-      ) : (
-        <div className="relative z-10 space-y-6">
-          <p className="text-cyan-200 text-sm sm:text-base text-center">
-            Wallet: {senderAddress.slice(0, 6)}...{senderAddress.slice(-4)}
+    <div className="flex flex-col bg-[#0A0A0A] text-white overflow-hidden">
+      <div className="mt-20 sm:mt-24 md:mt-28">
+        <header className="px-4 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20 bg-black relative">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M0 0h20v20H0V0zm1 1h18v18H1V1z\'/%3E%3C/g%3E%3C/svg%3E')]"></div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-pink-500 animate-pulse relative z-10">
+            Transfer SUPRA Tokens
+          </h1>
+          <p className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl lg:text-2xl text-cyan-200 text-center max-w-full sm:max-w-md md:max-w-xl lg:max-w-2xl mx-auto animate-fadeIn relative z-10">
+            Send SUPRA to any wallet on the Supra Network!
           </p>
-          <p className="text-cyan-200 text-sm sm:text-base text-center">
-            Network: {networkData?.chainId === "8" ? "Supra Mainnet" : "Unknown Network"}
-          </p>
-
-          <form onSubmit={handleTransfer} className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-purple-400 text-sm sm:text-base font-bold">
-                  Recipient Address
-                </label>
-              </div>
-              <input
-                type="text"
-                value={receiverAddress}
-                onChange={(e) => setReceiverAddress(e.target.value)}
-                disabled={isLoading}
-                placeholder="0x..."
-                className="w-full p-3 sm:p-4 rounded-lg bg-black/80 text-white border border-pink-500/30 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-purple-400 text-sm sm:text-base font-bold">
-                  Amount (SUPRA)
-                </label>
-                <span className="text-gray-400 text-sm sm:text-base">
-                  Balance: {balanceLoading ? "Loading..." : balanceError ? "N/A" : supraBalance.toFixed(2)} SUPRA
-                </span>
-              </div>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min="0.01"
-                  step="0.01"
-                  disabled={isLoading}
-                  placeholder="0.00"
-                  className="w-full p-3 sm:p-4 rounded-lg bg-black/80 text-white border border-pink-500/30 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300 pr-16"
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm sm:text-base">
-                  SUPRA
-                </span>
-              </div>
+          {!isConnected && (
+            <div className="mt-6 sm:mt-8 flex justify-center relative z-20">
               <button
-                type="button"
-                onClick={() => setAmount(supraBalance.toString())}
-                //disabled={balanceLoading || balanceError || supraBalance === 0}
-                className="mt-2 px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-600 text-sm sm:text-base transition-all duration-300 disabled:bg-gray-500"
+                onClick={handleConnectWallet}
+                className="px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-lg sm:text-xl md:text-2xl cursor-pointer"
               >
-                Max
+                Connect Wallet
               </button>
             </div>
+          )}
+        </header>
 
-            <div className="flex gap-2 flex-wrap">
-              {presetAmounts.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => handlePresetAmount(value)}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 text-sm sm:text-base transition-all duration-300"
-                >
-                  {value} SUPRA
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading || balanceLoading}
-              className="w-full px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-pink-500 to-cyan-500 text-white font-bold rounded-lg shadow-lg hover:shadow-pink-500/50 transition-all duration-300 text-lg sm:text-xl disabled:bg-gray-500 disabled:shadow-none"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-t-transparent border-cyan-400 rounded-full animate-spin mr-2"></div>
-                  Processing...
+        <section className="px-4 sm:px-6 md:px-8 py-16 sm:py-20 md:py-24 bg-[#1a1a1a] relative">
+          <div className="max-w-7xl mx-auto">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="mt-4 text-xl text-cyan-400 animate-pulse">Loading wallet data...</p>
                 </div>
-              ) : (
-                "Transfer"
-              )}
-            </button>
-          </form>
+              </div>
+            )}
 
-          {error && (
-            <p className="text-red-400 text-sm sm:text-base text-center mt-4">{error}</p>
-          )}
-          {txHash && (
-            <p className="text-green-400 text-sm sm:text-base text-center mt-4">
-              Success! View transaction:{" "}
-              <a
-                href={`https://suprascan.io/tx/${txHash}/f?tab=advanced%20information`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-cyan-400 hover:text-pink-500 transition-colors duration-300"
-              >
-                {txHash.slice(0, 6)}...{txHash.slice(-6)}
-              </a>
-            </p>
-          )}
-        </div>
-      )}
+            {loading ? null : error ? (
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl text-red-400">{error}</p>
+              </div>
+            ) : isConnected ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-black/80 p-6 sm:p-8 rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/20">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-cyan-400 mb-6">Transfer Details</h3>
+                  <div className="space-y-6">
+                    <p className="text-base sm:text-lg text-gray-400">
+                      Your Account: <span className="text-white">{accounts[0].slice(0, 6)}...{accounts[0].slice(-4)}</span>
+                    </p>
+                    <p className="text-base sm:text-lg text-gray-400">
+                      SUPRA Balance: <span className="text-white">{getSupraBalance().toFixed(2)} SUPRA</span>
+                    </p>
+                    <p className="text-base sm:text-lg text-gray-400">
+                      Network: <span className="text-white">Chain ID {networkData?.chainId}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-1 bg-black/80 p-6 sm:p-8 rounded-2xl border border-pink-500/30 shadow-2xl shadow-pink-500/20">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-pink-400 mb-6">Send SUPRA</h3>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-base sm:text-lg text-gray-400">Recipient Address</label>
+                      <input
+                        type="text"
+                        value={recipientAddress}
+                        onChange={(e) => setRecipientAddress(e.target.value)}
+                        placeholder="0x..."
+                        disabled={isLoading}
+                        className="w-full p-3 sm:p-4 mt-2 bg-black/50 border border-pink-500/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-pink-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-base sm:text-lg text-gray-400">Amount (SUPRA)</label>
+                      <input
+                        type="number"
+                        value={transferAmount}
+                        onChange={(e) => setTransferAmount(e.target.value)}
+                        placeholder="0.00 SUPRA"
+                        disabled={isLoading}
+                        className="w-full p-3 sm:p-4 mt-2 bg-black/50 border border-pink-500/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-pink-400"
+                      />
+                      <p className="mt-2 text-sm sm:text-base text-gray-400">
+                        Balance: {getSupraBalance().toFixed(2)} SUPRA
+                      </p>
+                    </div>
+                    <div className="space-y-4">
+                      <button
+                        onClick={handleTransfer}
+                        disabled={isLoading}
+                        className="w-full py-3 bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:shadow-pink-500/50 transition-all duration-300 text-lg sm:text-xl disabled:bg-gray-500 disabled:shadow-none"
+                      >
+                        {isLoading ? "Processing..." : "Send SUPRA"}
+                      </button>
+                      {transferError && (
+                        <p className="text-red-400 text-sm sm:text-base">{transferError}</p>
+                      )}
+                      {txHash && (
+                        <p className="text-green-400 text-sm sm:text-base">
+                          Success! Tx:{" "}
+                          <a
+                            href={`https://suprascan.io/tx/${txHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline text-cyan-400 hover:text-pink-500"
+                          >
+                            {txHash.slice(0, 6)}...{txHash.slice(-6)}
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl text-purple-400 mb-6">Connect Wallet to Transfer SUPRA!</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <footer className="p-6 sm:p-8 md:p-10 text-center text-gray-400 bg-black border-t border-cyan-500/20">
+          <p className="text-sm sm:text-base md:text-lg">Supra Token Transfer | Powered by Supra Chain | © 2025 SupraTrade</p>
+        </footer>
+      </div>
     </div>
   );
-};
+}

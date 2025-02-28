@@ -8,7 +8,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "*.d.ts", "types/**/*.d.ts", "types/supra-l1-sdk.d.ts.bak"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "*.d.ts", "types/**/*.d.ts", "types/supra-l1-sdk.d.ts.bak", "pages/api/pump-data.js", "fetchConfig.mjs"],
   "exclude": ["node_modules"]
 }

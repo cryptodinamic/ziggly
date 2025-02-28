@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   webpack: (config, { isServer }) => {
-    if (!isServer) {
+    if (isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         util: require.resolve("util/"),
@@ -17,3 +17,6 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+
+
